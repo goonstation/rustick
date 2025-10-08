@@ -6,6 +6,14 @@ dm junk:
 #define add_timer(delay, proc_owner, proc_name, proc_args...) call_ext("project1","byond:schedule_once")(delay, proc_owner, proc_name, list(proc_args))
 #define add_recurring_timer(delay, period, proc_owner, proc_name, proc_args...) call_ext("project1","byond:schedule_periodic")(delay, period, proc_owner, proc_name, list(proc_args))
 
+/proc/cancel_timer(var/id)
+	call_ext("project1","byond:cancel_timer")(id)
+
+/proc/timer_error(var/a)
+	stack_trace("Timer error: [a]")
+
+//for dev memes:
+
 /proc/start_timer_proc_test()
 	boutput(world, "[world.time] Scheduling a bunch of timers")
 	for (var/i in 1 to 10)
@@ -39,8 +47,7 @@ dm junk:
 	var/ret = add_recurring_timer(1000, 1000, mymob, "timer_test", "I was scheduled to be periodic at [world.time] for 1000")
 	boutput(world, "Periodic timer id is [ret]")
 
-/proc/cancel_timer(var/id)
-	call_ext("project1","byond:cancel_timer")(id)
+
 
 /mob/proc/timer_test(var/a)
 	boutput(src, "[world.time] It's time. Mob timer says: [a]")
@@ -52,6 +59,5 @@ dm junk:
 	boutput(world, "[world.time] It's time. Global timer says: [a]")
 	return "TIMER_CANCEL"
 
-/proc/timer_error(var/a)
-	stack_trace("Timer error: [a]")
+
 ```
