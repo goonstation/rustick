@@ -1,0 +1,20 @@
+[package]
+name = "project1"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+meowtonin = "0.2"
+hierarchical_hash_wheel_timer = "1.3.0"
+lazy_static = "1.5.0"
+
+
+[dependencies.uuid]
+version = "1.18.1"
+# Lets you generate random UUIDs
+features = [
+    "v4",
+]
