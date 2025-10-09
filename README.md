@@ -14,12 +14,6 @@ as Linux has compatibility issues across distributions.
 
 The [Rust] compiler:
 
-1. Install the Rust compiler's dependencies (primarily the system linker):
-
-   * Ubuntu: `sudo apt-get install gcc-multilib`
-   * Windows (MSVC): [Build Tools for Visual Studio 2017][msvc]
-   * Windows (GNU): No action required
-
 1. Use [the Rust installer](https://rustup.rs/), or another Rust installation method,
    or run the following:
 
@@ -27,7 +21,9 @@ The [Rust] compiler:
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     ```
 
-1. Set the default compiler to **32-bit**:
+    You may need to install the Visual Studio C++ Build tools (system linker) when prompted to do so.
+
+2. Add the **32-bit** compiler target:
 
     ```sh
     git clone https://github.com/goonstation/rustick.git
@@ -65,7 +61,7 @@ If you aren't sharing the binary with other people, consider compiling [targetin
 
 ## Features
 
-To get additional features, pass a list to `--features`, for example `--features allow_non_32bit`. 
+To get additional features, pass a list to `--features`, for example `--features allow_non_32bit`.
 
 * `allow_non_32bit`: Disables the forced compile errors on non-32bit targets. Only use this if you know exactly what you are doing.
 
@@ -75,7 +71,7 @@ The rustick binary (`rustick.dll` or `librustick.so`) should be placed in the ro
 of your repository next to your `.dmb`. There are alternative installation
 locations, but this one is best supported.
 
-Compiling will also create the file `target/rustick.dm` which contains the DM API. 
+Compiling will also create the file `target/rustick.dm` which contains the DM API.
 To use rustick, copy-paste this file into your project.
 
 ## Troubleshooting
@@ -83,63 +79,63 @@ To use rustick, copy-paste this file into your project.
 You must build a 32-bit version of the library for it to be compatible with
 BYOND. Attempting to build a 64-bit version will fail with an explanatory error.
 
-dm junk: 
+dm junk:
 ```dm
 #define add_timer(delay, proc_owner, proc_name, proc_args...) call_ext("project1","byond:schedule_once")(delay, proc_owner, proc_name, list(proc_args))
 #define add_recurring_timer(delay, period, proc_owner, proc_name, proc_args...) call_ext("project1","byond:schedule_periodic")(delay, period, proc_owner, proc_name, list(proc_args))
 
 /proc/cancel_timer(var/id)
-	call_ext("project1","byond:cancel_timer")(id)
+    call_ext("project1","byond:cancel_timer")(id)
 
 /proc/timer_error(var/a)
-	stack_trace("Timer error: [a]")
+    stack_trace("Timer error: [a]")
 
 //for dev memes:
 
 /proc/start_timer_proc_test()
-	boutput(world, "[world.time] Scheduling a bunch of timers")
-	for (var/i in 1 to 10)
-		var/d = 1000*i
-		call_ext("project1","byond:schedule_once")(d, "global", "timer_test", list("I was scheduled at [world.time] for [d]"))
-		//call_ext("project1","byond:schedule_once")(d, "notaref", "timer_test", list("I was scheduled at [world.time] for [d]"))
-	boutput(world, "[world.time] Timers scheduled")
+    boutput(world, "[world.time] Scheduling a bunch of timers")
+    for (var/i in 1 to 10)
+        var/d = 1000*i
+        call_ext("project1","byond:schedule_once")(d, "global", "timer_test", list("I was scheduled at [world.time] for [d]"))
+        //call_ext("project1","byond:schedule_once")(d, "notaref", "timer_test", list("I was scheduled at [world.time] for [d]"))
+    boutput(world, "[world.time] Timers scheduled")
 
 /proc/start_timer_mob_proc_test()
-	var/mob/mymob = usr
-	boutput(world, "[world.time] Scheduling a bunch of timers on [usr]")
-	for (var/i in 1 to 10)
-		var/d = 1000*i
-		var/list/my_args = list("I was scheduled at [world.time] for [d]")
-		add_timer(d, mymob, "timer_test", "I was scheduled at [world.time] for [d]")
-	boutput(world, "[world.time] Timers scheduled")
+    var/mob/mymob = usr
+    boutput(world, "[world.time] Scheduling a bunch of timers on [usr]")
+    for (var/i in 1 to 10)
+        var/d = 1000*i
+        var/list/my_args = list("I was scheduled at [world.time] for [d]")
+        add_timer(d, mymob, "timer_test", "I was scheduled at [world.time] for [d]")
+    boutput(world, "[world.time] Timers scheduled")
 
 /proc/start_periodic_timer_proc_test()
-	boutput(world, "[world.time] Scheduling a periodic timer")
-	var/ret = add_recurring_timer(1000, 1000, "notaref", "timer_test", "I was scheduled to be periodic at [world.time] for 1000")
-	boutput(world, "Periodic timer id is [ret]")
+    boutput(world, "[world.time] Scheduling a periodic timer")
+    var/ret = add_recurring_timer(1000, 1000, "notaref", "timer_test", "I was scheduled to be periodic at [world.time] for 1000")
+    boutput(world, "Periodic timer id is [ret]")
 
 /proc/start_periodic_timer_proc_test_that_cancels()
-	boutput(world, "[world.time] Scheduling a periodic timer")
-	var/ret = add_recurring_timer(1000, 1000, "notaref", "timer_test_cancels", "I was scheduled to be periodic at [world.time] for 1000")
-	boutput(world, "Periodic timer id is [ret]")
+    boutput(world, "[world.time] Scheduling a periodic timer")
+    var/ret = add_recurring_timer(1000, 1000, "notaref", "timer_test_cancels", "I was scheduled to be periodic at [world.time] for 1000")
+    boutput(world, "Periodic timer id is [ret]")
 
 /proc/start_periodic_mob_timer_proc_test()
-	var/mob/mymob = usr
-	boutput(world, "[world.time] Scheduling a periodic timer on [usr]")
-	var/ret = add_recurring_timer(1000, 1000, mymob, "timer_test", "I was scheduled to be periodic at [world.time] for 1000")
-	boutput(world, "Periodic timer id is [ret]")
+    var/mob/mymob = usr
+    boutput(world, "[world.time] Scheduling a periodic timer on [usr]")
+    var/ret = add_recurring_timer(1000, 1000, mymob, "timer_test", "I was scheduled to be periodic at [world.time] for 1000")
+    boutput(world, "Periodic timer id is [ret]")
 
 
 
 /mob/proc/timer_test(var/a)
-	boutput(src, "[world.time] It's time. Mob timer says: [a]")
+    boutput(src, "[world.time] It's time. Mob timer says: [a]")
 
 /proc/timer_test(var/a)
-	boutput(world, "[world.time] It's time. Global timer says: [a]")
+    boutput(world, "[world.time] It's time. Global timer says: [a]")
 
 /proc/timer_test_cancels(var/a)
-	boutput(world, "[world.time] It's time. Global timer says: [a]")
-	return "TIMER_CANCEL"
+    boutput(world, "[world.time] It's time. Global timer says: [a]")
+    return "TIMER_CANCEL"
 ```
 
 [goonstation]: https://github.com/goonstation/goonstation
