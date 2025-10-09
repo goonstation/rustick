@@ -19,6 +19,15 @@ lazy_static! {
 
 }
 
+/*
+pub static TIMER_CORE: LazyLock<TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = LazyLock::new(|| {
+    TimerWithThread::for_uuid_closures()
+});
+pub static TIMER: LazyLock<Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>>> = LazyLock::new(|| {
+    Mutex::new(TIMER_CORE.timer_ref())
+});
+*/
+
 #[byond_fn]
 pub fn schedule_once(
     delay: u64,
