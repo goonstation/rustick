@@ -6,6 +6,10 @@ use std::sync::Mutex;
 use std::time::Duration;
 use uuid::Uuid;
 
+const TIMER_RESCHEDULE: &str = "TIMER_RESCHEDULE";
+const TIMER_CANCEL: &str = "TIMER_CANCEL";
+const ERROR_CALLBACK_PROC: &str = "rt_timer_error";
+
 lazy_static! {
     // real time timers, ticking in their own thread
     // this is here because i'm lazy
@@ -130,8 +134,8 @@ pub fn cancel_timer(strid: String) {
 
 pub fn should_reschedule(str_in: Option<String>) -> TimerReturn<()> {
     match str_in.as_deref() {
-        Some("TIMER_RESCHEDULE") => TimerReturn::Reschedule(()),
-        Some("TIMER_CANCEL") => TimerReturn::Cancel,
+        Some(TIMER_RESCHEDULE) => TimerReturn::Reschedule(()),
+        Some(TIMER_CANCEL) => TimerReturn::Cancel,
         _ => TimerReturn::Reschedule(()),
     }
 }
@@ -139,8 +143,8 @@ pub fn should_reschedule(str_in: Option<String>) -> TimerReturn<()> {
 pub fn should_reschedule_ostring(value_in: ByondResult<Option<String>>) -> TimerReturn<()> {
     match value_in {
         Ok(stri) => match stri.as_deref() {
-            Some("TIMER_RESCHEDULE") => TimerReturn::Reschedule(()),
-            Some("TIMER_CANCEL") => TimerReturn::Cancel,
+            Some(TIMER_RESCHEDULE) => TimerReturn::Reschedule(()),
+            Some(TIMER_CANCEL) => TimerReturn::Cancel,
             _ => TimerReturn::Reschedule(()),
         },
         Err(_) => TimerReturn::Cancel,
@@ -173,5 +177,5 @@ pub fn call_owned_proc(
 }
 
 pub fn scream_at_byond(aieee: String) {
-    let _ = meowtonin::call_global::<_, _, _, Option<String>>("timer_error", [aieee]);
+    let _ = meowtonin::call_global::<_, _, _, Option<String>>(ERROR_CALLBACK_PROC, [aieee]);
 }
