@@ -9,9 +9,9 @@ use std::sync::{Mutex};
 lazy_static! {
     // real time timers, ticking in their own thread
     // this is here because i'm lazy
-    pub static ref TIMER_CORE: TimerWithThread<uuid::Uuid, OneShotClosureState<uuid::Uuid>, PeriodicClosureState<uuid::Uuid>> = TimerWithThread::for_uuid_closures();
+    pub static ref TIMER_CORE: TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>> = TimerWithThread::for_uuid_closures();
     // this is here because it's actually useful
-    pub static ref TIMER: Mutex<TimerRef<uuid::Uuid, OneShotClosureState<uuid::Uuid>, PeriodicClosureState<uuid::Uuid>>> = Mutex::new(TIMER_CORE.timer_ref());
+    pub static ref TIMER: Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = Mutex::new(TIMER_CORE.timer_ref());
 
 }
 
