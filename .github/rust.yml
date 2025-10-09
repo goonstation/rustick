@@ -1,0 +1,120 @@
+name: rust-g
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Clippy (default features)
+        run: cargo clippy --target i686-pc-windows-msvc --locked -- -D warnings
+
+      - name: Rustfmt
+        run: cargo fmt -- --check
+
+      - name: Build (release) (default features)
+        run: cargo build --target i686-pc-windows-msvc --locked --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows Build
+          path: |
+            target/i686-pc-windows-msvc/release/rustick.dll
+            target/i686-pc-windows-msvc/release/rustick.pdb
+            target/rustick.dm
+
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: x64 Clippy (default features)
+        run: cargo clippy --target x86_64-pc-windows-msvc --features allow_non_32bit --locked -- -D warnings
+
+      - name: Rustfmt
+        run: cargo fmt -- --check
+
+      - name: x64 Build (release) (default features)
+        run: cargo build --target x86_64-pc-windows-msvc --features allow_non_32bit --locked --release
+
+      - name: Rename x64 artifacts
+        run: |
+          Move-Item -Path "target\x86_64-pc-windows-msvc\release\rustick.dll" -Destination "target\x86_64-pc-windows-msvc\release\rustick64.dll"
+          Move-Item -Path "target\x86_64-pc-windows-msvc\release\rustick.pdb" -Destination "target\x86_64-pc-windows-msvc\release\rustick64.pdb"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows Build x64
+          path: |
+            target/x86_64-pc-windows-msvc/release/rustick64.dll
+            target/x86_64-pc-windows-msvc/release/rustick64.pdb
+            target/rustick.dm
+
+  build-linux:
+    runs-on: ubuntu-latest
+    env:
+      BYOND_MAJOR: 516
+      BYOND_MINOR: 1667
+      PKG_CONFIG_ALLOW_CROSS: 1
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check (default features)
+        run: cargo check --target i686-unknown-linux-gnu --locked
+
+      - name: Build (Debug) (default features)
+        run: cargo build --target i686-unknown-linux-gnu --locked
+
+      - name: Build (release) (default features)
+        run: cargo build --target i686-unknown-linux-gnu --locked --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux Build
+          path: |
+            target/i686-unknown-linux-gnu/release/librustick.so
+            target/rustick.dm
+
+  build-linux-x64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: x64 Check (default features)
+        run: cargo check --target x86_64-unknown-linux-gnu --locked --features allow_non_32bit
+
+      - name: x64 Build (Debug) (default features)
+        run: cargo build --target x86_64-unknown-linux-gnu --locked --features allow_non_32bit
+
+      - name: x64 Build (release) (default features)
+        run: cargo build --target x86_64-unknown-linux-gnu --locked --features allow_non_32bit --release
+
+      - name: Rename x64 artifacts
+        run: mv target/x86_64-unknown-linux-gnu/release/librustick.so target/x86_64-unknown-linux-gnu/release/librustick64.so
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux Build x64
+          path: |
+            target/x86_64-unknown-linux-gnu/release/librustick64.so
+            target/rustick.dm

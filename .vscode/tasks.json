@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "label": "rust: cargo build (win32)",
+            "args": [
+                "build",
+                "--target",
+                "i686-pc-windows-msvc",
+            ],
+            "command": "cargo",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "rust: cargo build (win64 - for OpenDream only)",
+            "args": [
+                "build",
+                "--target",
+                "x86_64-pc-windows-msvc",
+                "--features",
+                "allow_non_32bit"
+            ],
+            "command": "cargo",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build"
+        },
+    ]
+}

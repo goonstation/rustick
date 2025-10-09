@@ -2,12 +2,27 @@
 name = "rustick"
 version = "0.1.0"
 edition = "2024"
+authors = [
+    "ZeWaka <zewakagamer@gmail.com>",               # Maintainer
+    "vuonojenmustaturska <naksu@youzen.ext.b2.fi>", # Original author
+    "rustick contributors",
+]
+repository = "https://github.com/goonstation/rustick"
+license = "MIT"
+description = "timers for the Goonstation Space Station 13 codebase using byondapi"
+rust-version = "1.85" # Feb 2025
 
 [lib]
 crate-type = ["cdylib"]
 
+[profile.release]
+opt-level = 3
+codegen-units = 1
+lto = true
+debug = true
+
 [dependencies]
-meowtonin = { version = "0.2.1", features = ["fast-typechecking"]}
+meowtonin = { version = "0.2.1", features = ["fast-typechecking"] }
 hierarchical_hash_wheel_timer = "1.3.0"
 lazy_static = "1.5.0"
 
@@ -15,6 +30,7 @@ lazy_static = "1.5.0"
 [dependencies.uuid]
 version = "1.18.1"
 # Lets you generate random UUIDs
-features = [
-    "v4",
-]
+features = ["v4"]
+
+[features]
+allow_non_32bit = []
