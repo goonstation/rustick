@@ -1,8 +1,7 @@
 use hierarchical_hash_wheel_timer::thread_timer::*;
 use hierarchical_hash_wheel_timer::*;
-use lazy_static::lazy_static;
 use meowtonin::{ByondError, ByondResult, ByondValue, byond_fn};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -10,23 +9,12 @@ const TIMER_RESCHEDULE: &str = "TIMER_RESCHEDULE";
 const TIMER_CANCEL: &str = "TIMER_CANCEL";
 const ERROR_CALLBACK_PROC: &str = "rt_timer_error";
 
-lazy_static! {
-    // real time timers, ticking in their own thread
-    // this is here because i'm lazy
-    pub static ref TIMER_CORE: TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>> = TimerWithThread::for_uuid_closures();
-    // this is here because it's actually useful
-    pub static ref TIMER: Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = Mutex::new(TIMER_CORE.timer_ref());
+type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
+type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-}
-
-/*
-pub static TIMER_CORE: LazyLock<TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = LazyLock::new(|| {
-    TimerWithThread::for_uuid_closures()
-});
-pub static TIMER: LazyLock<Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>>> = LazyLock::new(|| {
-    Mutex::new(TIMER_CORE.timer_ref())
-});
-*/
+pub static TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures);
+pub static TIMER: LazyLock<Mutex<TimerRefType>> =
+    LazyLock::new(|| Mutex::new(TIMER_CORE.timer_ref()));
 
 #[byond_fn]
 pub fn schedule_once(
