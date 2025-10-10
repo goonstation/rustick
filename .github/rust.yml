@@ -83,11 +83,15 @@ jobs:
       - name: Build (release) (default features)
         run: cargo build --target i686-unknown-linux-gnu --locked --release
 
+      - name: Strip debuginfo (release)
+        run: ./scripts/strip-debug.sh target/i686-unknown-linux-gnu/release/librustick.so
+
       - uses: actions/upload-artifact@v4
         with:
           name: Linux Build
           path: |
             target/i686-unknown-linux-gnu/release/librustick.so
+            target/i686-unknown-linux-gnu/release/librustick.so.dbg
             target/rustick.dm
 
   build-linux-x64:
@@ -112,9 +116,13 @@ jobs:
       - name: Rename x64 artifacts
         run: mv target/x86_64-unknown-linux-gnu/release/librustick.so target/x86_64-unknown-linux-gnu/release/librustick64.so
 
+      - name: Strip debuginfo (x64 release)
+        run: ./scripts/strip-debug.sh target/x86_64-unknown-linux-gnu/release/librustick64.so
+
       - uses: actions/upload-artifact@v4
         with:
           name: Linux Build x64
           path: |
             target/x86_64-unknown-linux-gnu/release/librustick64.so
+            target/x86_64-unknown-linux-gnu/release/librustick64.so.dbg
             target/rustick.dm

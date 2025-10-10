@@ -20,7 +20,6 @@ opt-level = 3
 codegen-units = 1
 lto = true
 debug = true
-split-debuginfo = "packed" # not perfect - https://github.com/tgstation/rust-g/issues/123
 
 [dependencies]
 meowtonin = { version = "0.2.1", features = ["fast-typechecking"] }

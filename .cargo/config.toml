@@ -1,0 +1,5 @@
+[target.i686-unknown-linux-gnu]
+linker = "scripts/strip-debug-wrapper-i686.sh"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "scripts/strip-debug-wrapper-x86_64.sh"

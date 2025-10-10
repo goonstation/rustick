@@ -62,5 +62,7 @@ jobs:
             ./artifacts/windows-x64/x86_64-pc-windows-msvc/release/rustick64.dll
             ./artifacts/windows-x64/x86_64-pc-windows-msvc/release/rustick64.pdb
             ./artifacts/linux/i686-unknown-linux-gnu/release/librustick.so
+            ./artifacts/linux/i686-unknown-linux-gnu/release/librustick.so.dbg
             ./artifacts/linux-x64/x86_64-unknown-linux-gnu/release/librustick64.so
+            ./artifacts/linux-x64/x86_64-unknown-linux-gnu/release/librustick64.so.dbg
             ./artifacts/windows/rustick.dm

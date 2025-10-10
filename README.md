@@ -79,6 +79,23 @@ To use rustick, copy-paste this file into your project.
 You must build a 32-bit version of the library for it to be compatible with
 BYOND. Attempting to build a 64-bit version will fail with an explanatory error.
 
+## Windows
+
+Debug information is automatically split & stripped into a separate `.pdb` companion
+file on Windows targets.
+
+## Linux
+
+Debug information is automatically split & stripped into a separate `.dbg` companion
+file on Linux targets. You can use the `.dbg` file for symbols (for example with `gdb`).
+
+If your toolchain uses non-default linker names, set the environment variables
+`RUSTICK_I686_REAL_LINKER` or `RUSTICK_X86_64_REAL_LINKER` to point at the desired
+linker executable before invoking `cargo build`.
+
+The split step relies on  `objcopy` & `strip`. If you use alternate toolchains,
+set `RUSTICK_OBJCOPY` and `RUSTICK_STRIP` to the appropriate binaries.
+
 [goonstation]: https://github.com/goonstation/goonstation
 [Rust]: https://rust-lang.org
 [Cargo]: https://doc.rust-lang.org/cargo/
