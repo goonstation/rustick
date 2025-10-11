@@ -6,8 +6,6 @@ use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use uuid::Uuid;
 
-
-
 type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 

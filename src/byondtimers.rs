@@ -1,20 +1,19 @@
 use crate::core::*;
 use crate::timer::*;
 use hierarchical_hash_wheel_timer::*;
-use lazy_static::lazy_static;
 use meowtonin::{ByondError, ByondResult, ByondValue, byond_fn};
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use uuid::Uuid;
 
-lazy_static! {
-    // real time timers, ticking in their own thread
-    // this is here because i'm lazy
-    pub static ref BYOND_TIMER_CORE: TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>> = TimerWithThread::for_uuid_closures_sans_autotick();
-    // this is here because it's actually useful
-    pub static ref BYOND_TIMER: Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = Mutex::new(BYOND_TIMER_CORE.timer_ref());
+type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
+type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-}
+    // byond tick timers
+    pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures_sans_autotick);
+
+    pub static BYOND_TIMER: LazyLock<Mutex<TimerRefType>> = LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.timer_ref()));
+
 
 #[byond_fn]
 pub fn schedule_once_tick(
