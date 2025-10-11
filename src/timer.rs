@@ -1,45 +1,12 @@
-//! This module provides a timer for real-time event schedulling with millisecond accuracy.
+//! Mostly a copy of hierarchical_hash_wheel_timer::thread_timer, with the option to not have the thread tick on its own (because we tick it from byond.)
+//!
 //!
 //! It runs on its own dedicated thread and uses a shareable handle called a `TimerRef` for communication with other threads.
 //! This inter-thread communication is based on [crossbeam_channel](crossbeam_channel).
 //!
 //! ## Note
-//! Sine this timer runs on its own thread, instance creation will fail if the generic id or state types used are not `Send`.
+//! Since this timer runs on its own thread, instance creation will fail if the generic id or state types used are not `Send`.
 //!
-//! # Example
-//! ```
-//! # use std::sync::{Arc, Mutex};
-//! # use uuid::Uuid;
-//! # use std::time::Duration;
-//! use hierarchical_hash_wheel_timer::*;
-//! use hierarchical_hash_wheel_timer::thread_timer::*;
-//!
-//! let timer_core = TimerWithThread::for_uuid_closures();
-//!
-//! let mut timer = timer_core.timer_ref();
-//!
-//! let barrier: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
-//! let barrier2 = barrier.clone();
-//! let id = Uuid::new_v4();
-//! let delay = Duration::from_millis(150);
-//! timer.schedule_action_once(id, delay, move |timer_id|{
-//!     println!("Timer function was triggered! Id={:?}", timer_id);
-//!     let mut guard = barrier2.lock().unwrap();
-//!     *guard = true;
-//! });
-//! println!("Waiting timing run to finish...");
-//! std::thread::sleep(delay);
-//! let mut done = false;
-//! while !done {
-//!     let guard = barrier.lock().unwrap();
-//!     done = *guard;
-//! }
-//! println!("Timing run completed!");
-//! drop(timer);
-//! timer_core
-//!    .shutdown()
-//!    .expect("Timer didn't shutdown properly!");
-//! ```
 use std::time::Duration;
 use std::hash::Hash;
 use hierarchical_hash_wheel_timer::*;
@@ -76,6 +43,7 @@ where
     work_queue: channel::Sender<TimerMsg<I, O, P>>,
 }
 
+/// Simple trait to implement tick() for
 pub trait TimerTicking {
     fn tick(&mut self);
 }
