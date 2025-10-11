@@ -49,7 +49,7 @@
 #define rt_add_timer(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once")(delay * 100, proc_owner, proc_name, list(proc_args))
 #define rt_add_timer_ms(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once")(delay, proc_owner, proc_name, list(proc_args))
 #define rt_add_timer_tick(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once_tick")(delay, proc_owner, proc_name, list(proc_args))
-#define rt_add_recurring_timer(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic")(delay * 100, period, proc_owner, proc_name, list(proc_args))
+#define rt_add_recurring_timer(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic")(delay * 100, period * 100, proc_owner, proc_name, list(proc_args))
 #define rt_add_recurring_timer_ms(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic")(delay, period, proc_owner, proc_name, list(proc_args))
 #define rt_add_recurring_timer_tick(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic_tick")(delay, period, proc_owner, proc_name, list(proc_args))
 

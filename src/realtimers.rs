@@ -22,7 +22,7 @@ pub fn schedule_once(
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = Uuid::new_v4();
+    let id = get_uuid(TimerType::RealTime);
     let delay = Duration::from_millis(delay);
 
     if owning_obj.is_null() || proc_path.is_null() {
@@ -46,7 +46,7 @@ pub fn schedule_periodic(
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = Uuid::new_v4();
+    let id = get_uuid(TimerType::RealTime);
     let delay = Duration::from_millis(delay);
     let period = Duration::from_millis(period);
 
@@ -62,9 +62,7 @@ pub fn schedule_periodic(
     Ok(id.to_string())
 }
 
-#[byond_fn]
-pub fn cancel_timer(strid: String) {
-    if let Ok(id) = Uuid::parse_str(&strid) {
-        TIMER.lock().unwrap().cancel(&id)
-    }
+
+pub fn cancel_timer(id: Uuid) {
+    TIMER.lock().unwrap().cancel(&id)
 }

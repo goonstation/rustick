@@ -23,7 +23,7 @@ pub fn schedule_once_tick(
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = Uuid::new_v4();
+    let id = get_uuid(TimerType::ByondTick);
     let delay = Duration::from_millis(delay);
 
     if owning_obj.is_null() || proc_path.is_null() {
@@ -48,7 +48,7 @@ pub fn schedule_periodic_tick(
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = Uuid::new_v4();
+    let id = get_uuid(TimerType::ByondTick);
     let delay = Duration::from_millis(delay);
     let period = Duration::from_millis(period);
 
@@ -64,11 +64,8 @@ pub fn schedule_periodic_tick(
     Ok(id.to_string())
 }
 
-#[byond_fn]
-pub fn cancel_timer_byondtick(strid: String) {
-    if let Ok(id) = Uuid::parse_str(&strid) {
-        BYOND_TIMER.lock().unwrap().cancel(&id)
-    }
+pub fn cancel_timer(id: Uuid) {
+    BYOND_TIMER.lock().unwrap().cancel(&id)
 }
 
 #[byond_fn]

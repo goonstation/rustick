@@ -1,14 +1,53 @@
-use meowtonin::{ByondResult, ByondValue};
+use meowtonin::{ByondResult, ByondValue, byond_fn};
 use hierarchical_hash_wheel_timer::*;
 use std::time::Duration;
 use uuid::Uuid;
 use crate::timer::TimerRef;
 
-
 const TIMER_RESCHEDULE: &str = "TIMER_RESCHEDULE";
 const TIMER_CANCEL: &str = "TIMER_CANCEL";
 const ERROR_CALLBACK_PROC: &str = "rt_timer_error";
 
+pub enum TimerType {
+    RealTime,
+    ByondTick,
+}
+
+pub fn get_uuid(utype: TimerType) -> Uuid {
+
+    // this is the "fast-rng" version of v4 uuids
+    let mut buf: [u8; 16] = rand::random();
+
+    // but we mangle one byte, it's a secret tool that will help us later. concat_bytes! is nightly :(
+    match utype {
+        TimerType::RealTime => buf[0] = 0,   // 00
+        TimerType::ByondTick => buf[0] = 189, // BD
+    }
+    Uuid::new_v8(buf)
+}
+
+pub trait TimerTypable {
+    fn timertype(&self) -> TimerType;
+}
+
+impl TimerTypable for Uuid {
+    fn timertype(&self) -> TimerType {
+        match self.as_bytes()[0] {
+            189 => TimerType::ByondTick,
+            _ => TimerType::RealTime
+        }
+    }
+}
+
+#[byond_fn]
+pub fn cancel_timer(strid: String) {
+    if let Ok(id) = Uuid::parse_str(&strid) {
+        match id.timertype() {
+            TimerType::ByondTick => crate::byondtimers::cancel_timer(id),
+            TimerType::RealTime => crate::realtimers::cancel_timer(id),
+        }
+    }
+}
 
 pub fn schedule_oneshot_timer(timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>, id: Uuid, delay: Duration, owning_obj: ByondValue, proc_path: ByondValue, proc_args: ByondValue) {
     if can_have_procs(&owning_obj) {
@@ -114,3 +153,4 @@ pub fn call_owned_proc(
 pub fn scream_at_byond(aieee: String) {
     let _ = meowtonin::call_global::<_, _, _, Option<String>>(ERROR_CALLBACK_PROC, [aieee]);
 }
+
