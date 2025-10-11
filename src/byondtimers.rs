@@ -1,7 +1,8 @@
 use crate::timer::*;
 use hierarchical_hash_wheel_timer::*;
+use lazy_static::lazy_static;
 use meowtonin::{ByondError, ByondResult, ByondValue, byond_fn};
-use std::sync::{LazyLock, Mutex};
+use std::sync::Mutex;
 use std::time::Duration;
 use uuid::Uuid;
 
@@ -9,15 +10,17 @@ const TIMER_RESCHEDULE: &str = "TIMER_RESCHEDULE";
 const TIMER_CANCEL: &str = "TIMER_CANCEL";
 const ERROR_CALLBACK_PROC: &str = "rt_timer_error";
 
-type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
-type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
+lazy_static! {
+    // real time timers, ticking in their own thread
+    // this is here because i'm lazy
+    pub static ref BYOND_TIMER_CORE: TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>> = TimerWithThread::for_uuid_closures_sans_autotick();
+    // this is here because it's actually useful
+    pub static ref BYOND_TIMER: Mutex<TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>> = Mutex::new(BYOND_TIMER_CORE.timer_ref());
 
-pub static TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures);
-pub static TIMER: LazyLock<Mutex<TimerRefType>> =
-    LazyLock::new(|| Mutex::new(TIMER_CORE.timer_ref()));
+}
 
 #[byond_fn]
-pub fn schedule_once(
+pub fn schedule_once_byondtick(
     delay: u64,
     owning_obj: ByondValue,
     proc_path: ByondValue,
@@ -32,7 +35,7 @@ pub fn schedule_once(
 
     proc_args.inc_ref();
 
-    let mut timers = TIMER.lock().unwrap();
+    let mut timers = BYOND_TIMER.lock().unwrap();
 
     if can_have_procs(&owning_obj) {
         // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
@@ -57,7 +60,7 @@ pub fn schedule_once(
 }
 
 #[byond_fn]
-pub fn schedule_periodic(
+pub fn schedule_periodic_byondtick(
     delay: u64,
     period: u64,
     owning_obj: ByondValue,
@@ -73,7 +76,7 @@ pub fn schedule_periodic(
     }
 
     proc_args.inc_ref();
-    let mut timers = TIMER.lock().unwrap();
+    let mut timers = BYOND_TIMER.lock().unwrap();
 
     if can_have_procs(&owning_obj) {
         // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
@@ -123,10 +126,15 @@ pub fn schedule_periodic(
 }
 
 #[byond_fn]
-pub fn cancel_timer(strid: String) {
+pub fn cancel_timer_byondtick(strid: String) {
     if let Ok(id) = Uuid::parse_str(&strid) {
-        TIMER.lock().unwrap().cancel(&id)
+        BYOND_TIMER.lock().unwrap().cancel(&id)
     }
+}
+
+#[byond_fn]
+pub fn tick_byondtick() {
+    BYOND_TIMER.lock().expect("tick timer").tick()
 }
 
 pub fn should_reschedule(str_in: Option<String>) -> TimerReturn<()> {
@@ -137,16 +145,6 @@ pub fn should_reschedule(str_in: Option<String>) -> TimerReturn<()> {
     }
 }
 
-pub fn should_reschedule_ostring(value_in: ByondResult<Option<String>>) -> TimerReturn<()> {
-    match value_in {
-        Ok(stri) => match stri.as_deref() {
-            Some(TIMER_RESCHEDULE) => TimerReturn::Reschedule(()),
-            Some(TIMER_CANCEL) => TimerReturn::Cancel,
-            _ => TimerReturn::Reschedule(()),
-        },
-        Err(_) => TimerReturn::Cancel,
-    }
-}
 
 pub fn can_have_procs(type_in: &ByondValue) -> bool {
     meowtonin::value::typecheck::ByondValueType::PROC_HAVING_TYPES.contains(&type_in.get_type())
