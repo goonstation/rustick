@@ -1,5 +1,5 @@
 //! Mostly a copy of hierarchical_hash_wheel_timer::thread_timer, with the option to not have the thread tick on its own (because we tick it from byond.)
-//!
+//! The original file is licensed under MIT.
 //!
 //! It runs on its own dedicated thread and uses a shareable handle called a `TimerRef` for communication with other threads.
 //! This inter-thread communication is based on [crossbeam_channel](crossbeam_channel).

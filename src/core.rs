@@ -17,10 +17,10 @@ pub enum TimerType {
 
 pub fn get_uuid(utype: TimerType) -> Uuid {
 
-    // this is the "fast-rng" version of v4 uuids
+    // this is basically the same as what uuid crate itself does when it creates v4 uuids using the "fast-rng" feature
     let mut buf: [u8; 16] = rand::random();
 
-    // but we mangle one byte, it's a secret tool that will help us later. concat_bytes! is nightly :(
+    // but we mangle one byte, so that we can tell where the id originated in when we cancel. concat_bytes! is nightly :(
     match utype {
         TimerType::RealTime => buf[0] = 0,   // 00
         TimerType::ByondTick => buf[0] = 189, // BD
