@@ -1,7 +1,22 @@
-//! Mostly a copy of hierarchical_hash_wheel_timer::thread_timer, with the option to not have the thread tick on its own (because we tick it from byond.)
-//! The original file is licensed under MIT.
+//! Mostly a copy of hierarchical_hash_wheel_timer::thread_timer, with modifications to allow us to lobotomize the thread
+//! so that it does not tick or skip on its own but instead is driven by tick messages from DM code.
 //!
-//! It runs on its own dedicated thread and uses a shareable handle called a `TimerRef` for communication with other threads.
+//! Original unmodified file at https://github.com/Bathtor/rust-hash-wheel-timer/blob/7464a0f11e3836efc23ec1d132fb74383d5c149d/src/thread_timer.rs
+//!
+//! Copyright (c) 2020 Lars Kroll
+//!
+//! Permission is hereby granted, free of charge, to any person obtaining a copy
+//! of this software and associated documentation files (the "Software"), to deal
+//! in the Software without restriction, including without limitation the rights
+//! to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//! copies of the Software, and to permit persons to whom the Software is
+//! furnished to do so, subject to the following conditions:
+//!
+//! The above copyright notice and this permission notice shall be included in all
+//! copies or substantial portions of the Software.
+//!
+//!
+//! Runs its own dedicated thread and uses a shareable handle called a `TimerRef` for communication with other threads.
 //! This inter-thread communication is based on [crossbeam_channel](crossbeam_channel).
 //!
 //! ## Note
