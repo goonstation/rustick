@@ -22,13 +22,13 @@
 //! ## Note
 //! Since this timer runs on its own thread, instance creation will fail if the generic id or state types used are not `Send`.
 //!
-use std::time::Duration;
-use std::hash::Hash;
 use hierarchical_hash_wheel_timer::*;
+use std::hash::Hash;
+use std::time::Duration;
 
-use hierarchical_hash_wheel_timer::wheels::{cancellable::*, *};
 use channel::select;
 use crossbeam_channel as channel;
+use hierarchical_hash_wheel_timer::wheels::{cancellable::*, *};
 use std::{cmp::Ordering, fmt, io, rc::Rc, thread, time::Instant};
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ where
     fn tick(&mut self) {
         self.work_queue
             .send(TimerMsg::Tick)
-            .unwrap_or_else(|e| eprintln!("Could not send Tick msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Tick msg: {e:?}"));
     }
 }
 
@@ -90,7 +90,7 @@ where
         let e = TimerEntry::OneShot { timeout, state };
         self.work_queue
             .send(TimerMsg::Schedule(e))
-            .unwrap_or_else(|e| eprintln!("Could not send Schedule msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Schedule msg: {e:?}"));
     }
 
     fn schedule_periodic(&mut self, delay: Duration, period: Duration, state: Self::PeriodicState) {
@@ -101,15 +101,14 @@ where
         };
         self.work_queue
             .send(TimerMsg::Schedule(e))
-            .unwrap_or_else(|e| eprintln!("Could not send Schedule msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Schedule msg: {e:?}"));
     }
 
     fn cancel(&mut self, id: &Self::Id) {
         self.work_queue
             .send(TimerMsg::Cancel(id.clone()))
-            .unwrap_or_else(|e| eprintln!("Could not send Cancel msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Cancel msg: {e:?}"));
     }
-
 }
 impl<I, O, P> Clone for TimerRef<I, O, P>
 where
@@ -193,7 +192,7 @@ where
     pub fn shutdown(self) -> Result<(), ThreadTimerError<I, O, P>> {
         self.work_queue
             .send(TimerMsg::Stop)
-            .unwrap_or_else(|e| eprintln!("Could not send Stop msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Stop msg: {e:?}"));
         match self.timer_thread.join() {
             Ok(_) => Ok(()),
             Err(_) => {
@@ -207,7 +206,7 @@ where
     pub fn shutdown_async(&self) -> Result<(), ThreadTimerError<I, O, P>> {
         self.work_queue
             .send(TimerMsg::Stop)
-            .unwrap_or_else(|e| eprintln!("Could not send Stop msg: {:?}", e));
+            .unwrap_or_else(|e| eprintln!("Could not send Stop msg: {e:?}"));
         Ok(())
     }
 }
@@ -377,7 +376,6 @@ where
 
     fn run(mut self) {
         while self.running {
-
             if self.autoticking {
                 let elap = self.elapsed();
                 if elap > 0 {
@@ -386,7 +384,6 @@ where
                     }
                 }
             }
-
 
             match self.work_queue.try_recv() {
                 Ok(msg) => self.handle_msg(msg),
@@ -411,7 +408,7 @@ where
                         }
                         Skip::Millis(can_skip) if can_skip > 5 => {
                             let waiting_time = can_skip - 5; // balance OS scheduler inaccuracy
-                                                             // wait until something is scheduled but max skip
+                            // wait until something is scheduled but max skip
                             let timeout = Duration::from_millis(waiting_time as u64);
                             let res = select! {
                                 recv(self.work_queue) -> msg => msg.ok(),
@@ -461,7 +458,6 @@ where
                 }
             }
         }
-
     }
 
     #[inline(always)]
@@ -490,13 +486,13 @@ where
                     Err(TimerError::Expired(e)) => {
                         self.trigger_entry(e);
                     }
-                    Err(f) => panic!("Could not insert timer entry! {:?}", f),
+                    Err(f) => panic!("Could not insert timer entry! {f:?}"),
                 }
             }
             TimerMsg::Cancel(ref id) => match self.timer.cancel(id) {
                 Ok(_) => (),                     // ok
                 Err(TimerError::NotFound) => (), // also ok, might have been triggered already
-                Err(f) => panic!("Unexpected error cancelling timer! {:?}", f),
+                Err(f) => panic!("Unexpected error cancelling timer! {f:?}"),
             },
         }
     }
@@ -505,11 +501,10 @@ where
         if let Some((new_e, delay)) = ThreadTimerEntry::execute_unique_ref(e) {
             match self.timer.insert_ref_with_delay(new_e, delay) {
                 Ok(_) => (), // ok
-                Err(TimerError::Expired(e)) => panic!(
-                    "Trying to insert periodic timer entry with 0ms period! {:?}",
-                    e
-                ),
-                Err(f) => panic!("Could not insert timer entry! {:?}", f),
+                Err(TimerError::Expired(e)) => {
+                    panic!("Trying to insert periodic timer entry with 0ms period! {e:?}")
+                }
+                Err(f) => panic!("Could not insert timer entry! {f:?}"),
             }
         } // otherwise: timer is not rescheduled
     }
