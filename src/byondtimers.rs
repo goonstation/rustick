@@ -9,18 +9,19 @@ use uuid::Uuid;
 type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-pub static TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures);
-pub static TIMER: LazyLock<Mutex<TimerRefType>> =
-    LazyLock::new(|| Mutex::new(TIMER_CORE.timer_ref()));
+pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures_sans_autotick);
+pub static BYOND_TIMER: LazyLock<Mutex<TimerRefType>> =
+    LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.timer_ref()));
+
 
 #[byond_fn]
-pub fn schedule_once(
+pub fn schedule_once_tick(
     delay: u64,
     owning_obj: ByondValue,
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = get_uuid(TimerType::RealTime);
+    let id = get_uuid(TimerType::ByondTick);
     let delay = Duration::from_millis(delay);
 
     if owning_obj.is_null() || proc_path.is_null() {
@@ -29,7 +30,8 @@ pub fn schedule_once(
 
     proc_args.inc_ref();
 
-    let mut timers = TIMER.lock().unwrap();
+    let mut timers = BYOND_TIMER.lock().unwrap();
+
 
     schedule_oneshot_timer(&mut timers, id, delay, owning_obj, proc_path, proc_args);
 
@@ -37,14 +39,14 @@ pub fn schedule_once(
 }
 
 #[byond_fn]
-pub fn schedule_periodic(
+pub fn schedule_periodic_tick(
     delay: u64,
     period: u64,
     owning_obj: ByondValue,
     proc_path: ByondValue,
     proc_args: ByondValue,
 ) -> ByondResult<String> {
-    let id = get_uuid(TimerType::RealTime);
+    let id = get_uuid(TimerType::ByondTick);
     let delay = Duration::from_millis(delay);
     let period = Duration::from_millis(period);
 
@@ -53,14 +55,18 @@ pub fn schedule_periodic(
     }
 
     proc_args.inc_ref();
-    let mut timers = TIMER.lock().unwrap();
+    let mut timers = BYOND_TIMER.lock().unwrap();
 
     schedule_periodic_timer(&mut timers, id, delay, period, owning_obj, proc_path, proc_args);
 
     Ok(id.to_string())
 }
 
-
 pub fn cancel_timer(id: Uuid) {
-    TIMER.lock().unwrap().cancel(&id)
+    BYOND_TIMER.lock().unwrap().cancel(&id)
+}
+
+#[byond_fn]
+pub fn tick_byondtick() {
+    BYOND_TIMER.lock().expect("failed to acquire lock in tick_byondtick").tick()
 }
