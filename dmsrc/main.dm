@@ -32,7 +32,7 @@
 #define RT_TIMER_CANCEL "RT_TIMER_CANCEL"
 #define RT_TIMER_RESCHEDULE "RT_TIMER_RESCHEDULE"
 
-/// Gets the version of rustick
+/// Gets the current version of rustick
 /proc/rustick_get_version() as text
 	return call_ext(RUSTICK, "byond:get_version")()
 
@@ -44,18 +44,81 @@
  * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
  * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
  *
- * **Returns** - A unique ID (uuidv4) for the scheduled timer.
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
  */
 #define rt_add_timer(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once")(delay * 100, proc_owner, proc_name, list(proc_args))
+/**
+ * Schedules a one-time timer to call a proc after a delay.
+ *
+ * * `delay` - Time in ***miliseconds*** to wait before calling the proc.
+ * * `proc_owner` - The datum/atom that owns the proc to call. Can also be `"global"`.
+ * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
+ * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
+ *
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
+ */
 #define rt_add_timer_ms(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once")(delay, proc_owner, proc_name, list(proc_args))
+/**
+ * Schedules a one-time timer to call a proc after a delay.
+ *
+ * Be careful, because server ticks are not always at constant intervals.
+ *
+ * * `delay` - Server ticks to wait before calling the proc.
+ * * `proc_owner` - The datum/atom that owns the proc to call. Can also be `"global"`.
+ * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
+ * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
+ *
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
+ */
 #define rt_add_timer_tick(delay, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_once_tick")(delay, proc_owner, proc_name, list(proc_args))
+/**
+ * Schedules a reoccuring timer to call a proc after a delay and then repeatedly at a set period.
+ *
+ * * `delay` - Time in deciseconds to wait before calling the proc.
+ * * `period` - Time in deciseconds between calls to the proc.
+ * * `proc_owner` - The datum/atom that owns the proc to call. Can also be `"global"`.
+ * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
+ * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
+ *
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
+ */
 #define rt_add_recurring_timer(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic")(delay * 100, period * 100, proc_owner, proc_name, list(proc_args))
+/**
+ * Schedules a reoccuring timer to call a proc after a delay and then repeatedly at a set period.
+ *
+ * * `delay` - Time in ***milliseconds*** to wait before calling the proc.
+ * * `period` - Time in ***milliseconds*** between calls to the proc.
+ * * `proc_owner` - The datum/atom that owns the proc to call. Can also be `"global"`.
+ * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
+ * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
+ *
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
+ */
 #define rt_add_recurring_timer_ms(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic")(delay, period, proc_owner, proc_name, list(proc_args))
+/**
+ * Schedules a reoccuring timer to call a proc after a delay and then repeatedly at a set period.
+ *
+ * Be careful, because server ticks are not always at constant intervals.
+ *
+ * * `delay` - Server ticks to wait before calling the proc.
+ * * `period` - Server ticks between calls to the proc.
+ * * `proc_owner` - The datum/atom that owns the proc to call. Can also be `"global"`.
+ * * `proc_name` - The name of the proc to call. See: `PROC_REF`, `GLOBAL_PROC_REF`.
+ * * `proc_args` (varadic, optional) Arguments to pass to the called proc.
+ *
+ * **Returns** - A unique ID (uuidv8) for the scheduled timer.
+ */
 #define rt_add_recurring_timer_tick(delay, period, proc_owner, proc_name, proc_args...) call_ext(RUSTICK, "byond:schedule_periodic_tick")(delay, period, proc_owner, proc_name, list(proc_args))
 
-/proc/rt_cancel_timer(var/id)
+/**
+ * Cancels a scheduled timer.
+ *
+ * * `id` - The unique ID (uuidv8) of the timer to cancel.
+ */
+/proc/rt_cancel_timer(id)
 	call_ext(RUSTICK, "byond:cancel_timer")(id)
 
+/** Reports an error from the rustick timer system. */
 /proc/rt_timer_error(error_str)
 	stack_trace("Rustick Timer error: [error_str]")
 
