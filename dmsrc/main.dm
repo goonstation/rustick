@@ -34,7 +34,7 @@
 
 /// Gets the version of rustick
 /proc/rustick_get_version() as text
-	return call_ext(RUSTICK, "get_version")()
+	return call_ext(RUSTICK, "byond:get_version")()
 
 /**
  * Schedules a one-time timer to call a proc after a delay.
