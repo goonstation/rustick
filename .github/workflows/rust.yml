@@ -89,6 +89,12 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Prepare scripts
+        run: |
+          chmod +x ./scripts/strip-debug.sh
+          chmod +x ./scripts/strip-debug-wrapper-i686.sh
+          sudo apt-get install -y binutils-multiarch
+
       - name: Check (default features)
         run: cargo check --target i686-unknown-linux-gnu --locked
 
@@ -96,7 +102,9 @@ jobs:
         run: cargo build --target i686-unknown-linux-gnu --locked
 
       - name: Build (release) (default features)
-        run: cargo build --target i686-unknown-linux-gnu --locked --release
+        run: |
+          # Use absolute path for the linker wrapper
+          RUSTFLAGS="-C linker=$(pwd)/scripts/strip-debug-wrapper-i686.sh" cargo build --target i686-unknown-linux-gnu --locked --release
 
       - uses: actions/upload-artifact@v4
         with:
