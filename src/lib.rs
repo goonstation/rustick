@@ -12,6 +12,10 @@ compile_error!(
     "Compiling for non-32bit is not allowed without enabling the `allow_non_32bit` feature."
 );
 
+/// Returns the current version of the rustick library.
+///
+/// # Returns
+/// * The version string from Cargo.toml
 #[byond_fn]
 pub fn get_version() -> Option<&'static str> {
     Some(env!("CARGO_PKG_VERSION"))

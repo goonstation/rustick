@@ -13,6 +13,16 @@ pub static TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::
 pub static TIMER: LazyLock<Mutex<TimerRefType>> =
     LazyLock::new(|| Mutex::new(TIMER_CORE.timer_ref()));
 
+/// Schedules a one-shot timer based on real-time (milliseconds).
+///
+/// # Arguments
+/// * `delay` - Milliseconds to wait before executing the proc
+/// * `owning_obj` - The BYOND object that owns the proc to call
+/// * `proc_path` - The path to the proc to call
+/// * `proc_args` - Arguments to pass to the proc
+///
+/// # Returns
+/// * A UUID string identifying the timer for cancellation
 #[byond_fn]
 pub fn schedule_once(
     delay: u64,
@@ -36,6 +46,17 @@ pub fn schedule_once(
     Ok(id.to_string())
 }
 
+/// Schedules a recurring timer based on real-time (milliseconds).
+///
+/// # Arguments
+/// * `delay` - Milliseconds to wait before first execution
+/// * `period` - Milliseconds between recurring executions
+/// * `owning_obj` - The BYOND object that owns the proc to call
+/// * `proc_path` - The path to the proc to call
+/// * `proc_args` - Arguments to pass to the proc
+///
+/// # Returns
+/// * A UUID string identifying the timer for cancellation
 #[byond_fn]
 pub fn schedule_periodic(
     delay: u64,

@@ -14,6 +14,16 @@ pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> =
 pub static BYOND_TIMER: LazyLock<Mutex<TimerRefType>> =
     LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.timer_ref()));
 
+/// Schedules a one-shot timer based on BYOND ticks.
+///
+/// # Arguments
+/// * `delay` - Number of BYOND ticks to wait before executing
+/// * `owning_obj` - The BYOND object that owns the proc to call
+/// * `proc_path` - The path to the proc to call
+/// * `proc_args` - Arguments to pass to the proc
+///
+/// # Returns
+/// * A UUID string identifying the timer for cancellation
 #[byond_fn]
 pub fn schedule_once_tick(
     delay: u64,
@@ -37,6 +47,17 @@ pub fn schedule_once_tick(
     Ok(id.to_string())
 }
 
+/// Schedules a recurring timer based on BYOND ticks.
+///
+/// # Arguments
+/// * `delay` - Number of BYOND ticks to wait before first execution
+/// * `period` - Number of BYOND ticks between recurring executions
+/// * `owning_obj` - The BYOND object that owns the proc to call
+/// * `proc_path` - The path to the proc to call
+/// * `proc_args` - Arguments to pass to the proc
+///
+/// # Returns
+/// * A UUID string identifying the timer for cancellation
 #[byond_fn]
 pub fn schedule_periodic_tick(
     delay: u64,
@@ -73,6 +94,10 @@ pub fn cancel_timer(id: Uuid) {
     BYOND_TIMER.lock().unwrap().cancel(&id)
 }
 
+/// Advances the BYOND tick-based timer system by one tick.
+///
+/// Called by the BYOND runtime to progress the timers that are based on ticks rather than real time.
+/// This function should be called once per BYOND game tick.
 #[byond_fn]
 pub fn tick_byondtick() {
     BYOND_TIMER

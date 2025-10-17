@@ -38,6 +38,13 @@ impl TimerTypable for Uuid {
     }
 }
 
+/// Cancels a scheduled timer based on its string UUID.
+///
+/// This function automatically routes the cancellation to either the BYOND tick
+/// timer system or the real-time timer system based on the UUID format.
+///
+/// # Arguments
+/// * `strid` - String representation of the timer's UUID
 #[byond_fn]
 pub fn cancel_timer(strid: String) {
     if let Ok(id) = Uuid::parse_str(&strid) {
