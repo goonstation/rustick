@@ -74,6 +74,50 @@ locations, but this one is best supported.
 Compiling will also create the file `target/rustick.dm` which contains the DM API.
 To use rustick, copy-paste this file into your project.
 
+## Example Usage
+
+### Simple Example
+
+```dm
+// Server restart system with countdown
+/proc/restart_server(delay)
+    // Restart the server in 5 minutes
+    rt_add_timer(30000, "global", "perform_server_restart")
+
+// The callback that performs the restart
+/proc/perform_server_restart()
+    world.Reboot()
+```
+
+### Advanced Example
+
+```dm
+/mob/var/burning_timer_id = null
+// Set up a recurring status effect that can be cancelled
+/mob/proc/apply_burning_effect(duration, damage_per_tick)
+    src << "Ow! You're on fire!"
+
+    burning_timer_id = rt_add_recurring_timer(0, 10, src, "process_burn_damage", damage_per_tick)
+
+    // Stop the burning after the duration
+    rt_add_timer(duration, src, "stop_burning")
+
+/mob/proc/process_burn_damage(damage_amount)
+    health -= damage_amount
+    src << "The flames burn you for [damage_amount] damage!"
+
+    if(health <= 0 || is_wet)
+        src << "The flames are extinguished!"
+        burning_timer_id = null
+        return RT_TIMER_CANCEL
+
+/mob/proc/stop_burning()
+    if(burning_timer_id)
+        rt_cancel_timer(burning_timer_id)
+        burning_timer_id = null
+        src << "The flames die down."
+```
+
 ## Troubleshooting
 
 You must build a 32-bit version of the library for it to be compatible with
