@@ -9,10 +9,10 @@ use uuid::Uuid;
 type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures_sans_autotick);
+pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> =
+    LazyLock::new(TimerWithThread::for_uuid_closures_sans_autotick);
 pub static BYOND_TIMER: LazyLock<Mutex<TimerRefType>> =
     LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.timer_ref()));
-
 
 #[byond_fn]
 pub fn schedule_once_tick(
@@ -31,7 +31,6 @@ pub fn schedule_once_tick(
     proc_args.inc_ref();
 
     let mut timers = BYOND_TIMER.lock().unwrap();
-
 
     schedule_oneshot_timer(&mut timers, id, delay, owning_obj, proc_path, proc_args);
 
@@ -57,7 +56,15 @@ pub fn schedule_periodic_tick(
     proc_args.inc_ref();
     let mut timers = BYOND_TIMER.lock().unwrap();
 
-    schedule_periodic_timer(&mut timers, id, delay, period, owning_obj, proc_path, proc_args);
+    schedule_periodic_timer(
+        &mut timers,
+        id,
+        delay,
+        period,
+        owning_obj,
+        proc_path,
+        proc_args,
+    );
 
     Ok(id.to_string())
 }
@@ -68,5 +75,8 @@ pub fn cancel_timer(id: Uuid) {
 
 #[byond_fn]
 pub fn tick_byondtick() {
-    BYOND_TIMER.lock().expect("failed to acquire lock in tick_byondtick").tick()
+    BYOND_TIMER
+        .lock()
+        .expect("failed to acquire lock in tick_byondtick")
+        .tick()
 }

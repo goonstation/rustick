@@ -1,10 +1,8 @@
-use meowtonin::{ByondResult, ByondValue, byond_fn};
+use crate::timer::TimerRef;
 use hierarchical_hash_wheel_timer::*;
+use meowtonin::{ByondResult, ByondValue, byond_fn};
 use std::time::Duration;
 use uuid::Uuid;
-use crate::timer::TimerRef;
-
-
 
 const TIMER_RESCHEDULE: &str = "TIMER_RESCHEDULE";
 const TIMER_CANCEL: &str = "TIMER_CANCEL";
@@ -16,13 +14,12 @@ pub enum TimerType {
 }
 
 pub fn get_uuid(utype: TimerType) -> Uuid {
-
     // this is basically the same as what uuid crate itself does when it creates v4 uuids using the "fast-rng" feature
     let mut buf: [u8; 16] = rand::random();
 
     // but we mangle one byte, so that we can tell where the id originated in when we cancel. concat_bytes! is nightly :(
     match utype {
-        TimerType::RealTime => buf[0] = 0,   // 00
+        TimerType::RealTime => buf[0] = 0,    // 00
         TimerType::ByondTick => buf[0] = 189, // BD
     }
     Uuid::new_v8(buf)
@@ -36,7 +33,7 @@ impl TimerTypable for Uuid {
     fn timertype(&self) -> TimerType {
         match self.as_bytes()[0] {
             189 => TimerType::ByondTick,
-            _ => TimerType::RealTime
+            _ => TimerType::RealTime,
         }
     }
 }
@@ -51,7 +48,14 @@ pub fn cancel_timer(strid: String) {
     }
 }
 
-pub fn schedule_oneshot_timer(timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>, id: Uuid, delay: Duration, owning_obj: ByondValue, proc_path: ByondValue, proc_args: ByondValue) {
+pub fn schedule_oneshot_timer(
+    timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>,
+    id: Uuid,
+    delay: Duration,
+    owning_obj: ByondValue,
+    proc_path: ByondValue,
+    proc_args: ByondValue,
+) {
     if can_have_procs(&owning_obj) {
         // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
         owning_obj.inc_ref();
@@ -72,7 +76,15 @@ pub fn schedule_oneshot_timer(timers: &mut TimerRef<Uuid, OneShotClosureState<Uu
     }
 }
 
-pub fn schedule_periodic_timer(timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>, id: Uuid, delay: Duration, period: Duration, owning_obj: ByondValue, proc_path: ByondValue, proc_args: ByondValue) {
+pub fn schedule_periodic_timer(
+    timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>,
+    id: Uuid,
+    delay: Duration,
+    period: Duration,
+    owning_obj: ByondValue,
+    proc_path: ByondValue,
+    proc_args: ByondValue,
+) {
     if can_have_procs(&owning_obj) {
         // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
         timers.schedule_action_periodic(id, delay, period, move |_timer_id| match call_owned_proc(
@@ -126,7 +138,6 @@ pub fn should_reschedule(str_in: Option<String>) -> TimerReturn<()> {
     }
 }
 
-
 pub fn can_have_procs(type_in: &ByondValue) -> bool {
     meowtonin::value::typecheck::ByondValueType::PROC_HAVING_TYPES.contains(&type_in.get_type())
 }
@@ -155,4 +166,3 @@ pub fn call_owned_proc(
 pub fn scream_at_byond(aieee: String) {
     let _ = meowtonin::call_global::<_, _, _, Option<String>>(ERROR_CALLBACK_PROC, [aieee]);
 }
-

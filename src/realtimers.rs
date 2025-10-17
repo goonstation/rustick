@@ -55,11 +55,18 @@ pub fn schedule_periodic(
     proc_args.inc_ref();
     let mut timers = TIMER.lock().unwrap();
 
-    schedule_periodic_timer(&mut timers, id, delay, period, owning_obj, proc_path, proc_args);
+    schedule_periodic_timer(
+        &mut timers,
+        id,
+        delay,
+        period,
+        owning_obj,
+        proc_path,
+        proc_args,
+    );
 
     Ok(id.to_string())
 }
-
 
 pub fn cancel_timer(id: Uuid) {
     TIMER.lock().unwrap().cancel(&id)
