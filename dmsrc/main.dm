@@ -36,6 +36,10 @@
 /proc/rustick_get_version() as text
 	return call_ext(RUSTICK, "byond:get_version")()
 
+/world/Tick()
+	..()
+	call_ext(RUSTICK, "byond:tick_byondtick")()
+
 /**
  * Schedules a one-time timer to call a proc after a delay.
  *

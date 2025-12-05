@@ -89,6 +89,7 @@ pub fn schedule_periodic(
     Ok(id.to_string())
 }
 
+/// Cancels a real-time timer based on its UUID.
 pub fn cancel_timer(id: Uuid) {
     TIMER.lock().unwrap().cancel(&id)
 }

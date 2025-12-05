@@ -64,7 +64,8 @@ pub fn schedule_oneshot_timer(
     proc_args: ByondValue,
 ) {
     if can_have_procs(&owning_obj) {
-        // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
+        // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out
+        // (subsequent calls might panic in the meowtonin thread to let you know tho)
         owning_obj.inc_ref();
         timers.schedule_action_once(id, delay, move |_timer_id| {
             if let Err(e) = call_owned_proc(&owning_obj, &proc_path, &proc_args) {
@@ -93,7 +94,8 @@ pub fn schedule_periodic_timer(
     proc_args: ByondValue,
 ) {
     if can_have_procs(&owning_obj) {
-        // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out (subsequent calls might panic in the meowtonin thread to let you know tho)
+        // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out
+        // (subsequent calls might panic in the meowtonin thread to let you know tho)
         timers.schedule_action_periodic(id, delay, period, move |_timer_id| match call_owned_proc(
             &owning_obj,
             &proc_path,
