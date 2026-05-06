@@ -9,10 +9,18 @@ use uuid::Uuid;
 type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-pub static BYOND_TIMER_CORE: LazyLock<TimerCoreType> =
-    LazyLock::new(TimerWithThread::for_uuid_closures_sans_autotick);
-pub static BYOND_TIMER: LazyLock<Mutex<TimerRefType>> =
-    LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.timer_ref()));
+pub static BYOND_TIMER_CORE: LazyLock<Option<TimerCoreType>> =
+    LazyLock::new(
+        || match TimerWithThread::for_uuid_closures_sans_autotick() {
+            Ok(timer) => Some(timer),
+            Err(e) => {
+                log_error(format!("failed to start BYOND-tick timer thread: {e}"));
+                None
+            }
+        },
+    );
+pub static BYOND_TIMER: LazyLock<Mutex<Option<TimerRefType>>> =
+    LazyLock::new(|| Mutex::new(BYOND_TIMER_CORE.as_ref().map(TimerWithThread::timer_ref)));
 
 /// Schedules a one-shot timer based on BYOND ticks.
 ///
@@ -38,11 +46,20 @@ pub fn schedule_once_tick(
         return Err(ByondError::InvalidProc);
     }
 
-    proc_args.inc_ref();
+    let mut timers = match BYOND_TIMER.lock() {
+        Ok(timers) => timers,
+        Err(e) => {
+            log_error(format!("failed to acquire BYOND-tick timer lock: {e}"));
+            return Err(ByondError::InvalidProc);
+        }
+    };
 
-    let mut timers = BYOND_TIMER.lock().unwrap();
+    let Some(timers) = timers.as_mut() else {
+        log_error("BYOND-tick timer thread is unavailable");
+        return Err(ByondError::InvalidProc);
+    };
 
-    schedule_oneshot_timer(&mut timers, id, delay, owning_obj, proc_path, proc_args);
+    schedule_oneshot_timer(timers, id, delay, owning_obj, proc_path, proc_args);
 
     Ok(id.to_string())
 }
@@ -74,24 +91,32 @@ pub fn schedule_periodic_tick(
         return Err(ByondError::InvalidProc);
     }
 
-    proc_args.inc_ref();
-    let mut timers = BYOND_TIMER.lock().unwrap();
+    let mut timers = match BYOND_TIMER.lock() {
+        Ok(timers) => timers,
+        Err(e) => {
+            log_error(format!("failed to acquire BYOND-tick timer lock: {e}"));
+            return Err(ByondError::InvalidProc);
+        }
+    };
 
-    schedule_periodic_timer(
-        &mut timers,
-        id,
-        delay,
-        period,
-        owning_obj,
-        proc_path,
-        proc_args,
-    );
+    let Some(timers) = timers.as_mut() else {
+        log_error("BYOND-tick timer thread is unavailable");
+        return Err(ByondError::InvalidProc);
+    };
+
+    schedule_periodic_timer(timers, id, delay, period, owning_obj, proc_path, proc_args);
 
     Ok(id.to_string())
 }
 
 pub fn cancel_timer(id: Uuid) {
-    BYOND_TIMER.lock().unwrap().cancel(&id)
+    match BYOND_TIMER.lock() {
+        Ok(mut timers) => match timers.as_mut() {
+            Some(timers) => timers.cancel(&id),
+            None => log_error("BYOND-tick timer thread is unavailable"),
+        },
+        Err(e) => log_error(format!("failed to acquire BYOND-tick timer lock: {e}")),
+    }
 }
 
 /// Advances the BYOND tick-based timer system by one tick.
@@ -100,8 +125,11 @@ pub fn cancel_timer(id: Uuid) {
 /// This function should be called once per BYOND game tick.
 #[byond_fn]
 pub fn tick_byondtick() {
-    BYOND_TIMER
-        .lock()
-        .expect("failed to acquire lock in tick_byondtick")
-        .tick()
+    match BYOND_TIMER.lock() {
+        Ok(mut timers) => match timers.as_mut() {
+            Some(timers) => timers.tick(),
+            None => log_error("BYOND-tick timer thread is unavailable"),
+        },
+        Err(e) => log_error(format!("failed to acquire BYOND-tick timer lock: {e}")),
+    }
 }

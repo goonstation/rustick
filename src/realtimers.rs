@@ -9,9 +9,16 @@ use uuid::Uuid;
 type TimerCoreType = TimerWithThread<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 type TimerRefType = TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>;
 
-pub static TIMER_CORE: LazyLock<TimerCoreType> = LazyLock::new(TimerWithThread::for_uuid_closures);
-pub static TIMER: LazyLock<Mutex<TimerRefType>> =
-    LazyLock::new(|| Mutex::new(TIMER_CORE.timer_ref()));
+pub static TIMER_CORE: LazyLock<Option<TimerCoreType>> =
+    LazyLock::new(|| match TimerWithThread::for_uuid_closures() {
+        Ok(timer) => Some(timer),
+        Err(e) => {
+            log_error(format!("failed to start real-time timer thread: {e}"));
+            None
+        }
+    });
+pub static TIMER: LazyLock<Mutex<Option<TimerRefType>>> =
+    LazyLock::new(|| Mutex::new(TIMER_CORE.as_ref().map(TimerWithThread::timer_ref)));
 
 /// Schedules a one-shot timer based on real-time (milliseconds).
 ///
@@ -37,11 +44,20 @@ pub fn schedule_once(
         return Err(ByondError::InvalidProc);
     }
 
-    proc_args.inc_ref();
+    let mut timers = match TIMER.lock() {
+        Ok(timers) => timers,
+        Err(e) => {
+            log_error(format!("failed to acquire real-time timer lock: {e}"));
+            return Err(ByondError::InvalidProc);
+        }
+    };
 
-    let mut timers = TIMER.lock().unwrap();
+    let Some(timers) = timers.as_mut() else {
+        log_error("real-time timer thread is unavailable");
+        return Err(ByondError::InvalidProc);
+    };
 
-    schedule_oneshot_timer(&mut timers, id, delay, owning_obj, proc_path, proc_args);
+    schedule_oneshot_timer(timers, id, delay, owning_obj, proc_path, proc_args);
 
     Ok(id.to_string())
 }
@@ -73,23 +89,31 @@ pub fn schedule_periodic(
         return Err(ByondError::InvalidProc);
     }
 
-    proc_args.inc_ref();
-    let mut timers = TIMER.lock().unwrap();
+    let mut timers = match TIMER.lock() {
+        Ok(timers) => timers,
+        Err(e) => {
+            log_error(format!("failed to acquire real-time timer lock: {e}"));
+            return Err(ByondError::InvalidProc);
+        }
+    };
 
-    schedule_periodic_timer(
-        &mut timers,
-        id,
-        delay,
-        period,
-        owning_obj,
-        proc_path,
-        proc_args,
-    );
+    let Some(timers) = timers.as_mut() else {
+        log_error("real-time timer thread is unavailable");
+        return Err(ByondError::InvalidProc);
+    };
+
+    schedule_periodic_timer(timers, id, delay, period, owning_obj, proc_path, proc_args);
 
     Ok(id.to_string())
 }
 
 /// Cancels a real-time timer based on its UUID.
 pub fn cancel_timer(id: Uuid) {
-    TIMER.lock().unwrap().cancel(&id)
+    match TIMER.lock() {
+        Ok(mut timers) => match timers.as_mut() {
+            Some(timers) => timers.cancel(&id),
+            None => log_error("real-time timer thread is unavailable"),
+        },
+        Err(e) => log_error(format!("failed to acquire real-time timer lock: {e}")),
+    }
 }

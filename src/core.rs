@@ -55,6 +55,10 @@ pub fn cancel_timer(strid: String) {
     }
 }
 
+pub(crate) fn log_error(error: impl Into<String>) {
+    scream_at_byond(error.into());
+}
+
 pub fn schedule_oneshot_timer(
     timers: &mut TimerRef<Uuid, OneShotClosureState<Uuid>, PeriodicClosureState<Uuid>>,
     id: Uuid,
