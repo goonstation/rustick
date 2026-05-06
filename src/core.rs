@@ -66,20 +66,16 @@ pub fn schedule_oneshot_timer(
     if can_have_procs(&owning_obj) {
         // Meowtonin catches panics and converts them to runtimes, but if the closure here panics the timing thread dies and you won't find out
         // (subsequent calls might panic in the meowtonin thread to let you know tho)
-        owning_obj.inc_ref();
         timers.schedule_action_once(id, delay, move |_timer_id| {
             if let Err(e) = call_owned_proc(&owning_obj, &proc_path, &proc_args) {
                 scream_at_byond(e.to_string());
             }
-            proc_args.dec_ref();
-            owning_obj.dec_ref();
         });
     } else {
         timers.schedule_action_once(id, delay, move |_timer_id| {
             if let Err(e) = call_global_proc(&proc_path, &proc_args) {
                 scream_at_byond(e.to_string());
             }
-            proc_args.dec_ref();
         });
     }
 }
@@ -101,18 +97,9 @@ pub fn schedule_periodic_timer(
             &proc_path,
             &proc_args,
         ) {
-            Ok(ret) => {
-                let res = should_reschedule(ret);
-                if res == TimerReturn::Cancel {
-                    owning_obj.dec_ref();
-                    proc_args.dec_ref();
-                }
-                res
-            }
+            Ok(ret) => should_reschedule(ret),
             Err(e) => {
                 scream_at_byond(e.to_string());
-                owning_obj.dec_ref();
-                proc_args.dec_ref();
                 TimerReturn::Cancel
             }
         });
@@ -122,16 +109,9 @@ pub fn schedule_periodic_timer(
             delay,
             period,
             move |_timer_id| match call_global_proc(&proc_path, &proc_args) {
-                Ok(ret) => {
-                    let res = should_reschedule(ret);
-                    if res == TimerReturn::Cancel {
-                        proc_args.dec_ref();
-                    }
-                    res
-                }
+                Ok(ret) => should_reschedule(ret),
                 Err(e) => {
                     scream_at_byond(e.to_string());
-                    proc_args.dec_ref();
                     TimerReturn::Cancel
                 }
             },
