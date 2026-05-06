@@ -440,6 +440,9 @@ where
         }
     }
 
+    /// Maximum number of catch-up ticks processed in a single `skip_and_tick` call.
+    const MAX_CATCH_UP_TICKS: u128 = 1_000;
+
     #[inline(always)]
     fn skip_and_tick(&mut self, can_skip: u32, elapsed: u128) {
         let can_skip_u128 = can_skip as u128;
@@ -450,12 +453,16 @@ where
                     // took longer to get rescheduled than we wanted
                     self.timer.skip(can_skip);
                     let ticks = elapsed - can_skip_u128;
+                    // cap catch-up iterations per call to avoid starving the message
+                    // queue when the thread was suspended for a long time.
+                    let ticks = ticks.min(Self::MAX_CATCH_UP_TICKS);
                     for _ in 0..ticks {
                         self.tick();
                     }
                 }
                 Ordering::Less => {
                     // we got woken up early, no need to tick
+                    // Safety: elapsed < can_skip (u32), so elapsed fits in u32.
                     self.timer.skip(elapsed as u32);
                 }
                 Ordering::Equal => {
